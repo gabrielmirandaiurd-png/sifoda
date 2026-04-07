@@ -88,12 +88,24 @@ export default function HomePage() {
     if (checklist.id) {
       await supabase
         .from("daily_checklist")
-        .update({ [field]: newVal })
+        .update({
+          treino_feito: updated.treino_feito,
+          dieta_seguida: updated.dieta_seguida,
+          uber_batida: updated.uber_batida,
+          tarefa_feita: updated.tarefa_feita,
+        })
         .eq("id", checklist.id);
     } else {
       const { data } = await supabase
         .from("daily_checklist")
-        .insert({ user_id: user.id, data: today(), ...updated })
+        .insert({
+          user_id: user.id,
+          data: today(),
+          treino_feito: updated.treino_feito,
+          dieta_seguida: updated.dieta_seguida,
+          uber_batida: updated.uber_batida,
+          tarefa_feita: updated.tarefa_feita,
+        })
         .select()
         .single();
       if (data) setChecklist(data);
