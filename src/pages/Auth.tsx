@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,9 +17,7 @@ export default function Auth() {
 
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast.error(error.message);
-      }
+      if (error) toast.error(error.message);
     } else {
       const { error } = await supabase.auth.signUp({
         email,
@@ -32,84 +27,53 @@ export default function Auth() {
           emailRedirectTo: window.location.origin,
         },
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Conta criada! Verifique seu e-mail.");
-      }
+      if (error) toast.error(error.message);
+      else toast.success("Conta criada! Verifique seu e-mail.");
     }
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold tracking-tight">TáPago</span>
-          </div>
-          <CardTitle className="text-xl">
-            {isLogin ? "Entrar na sua conta" : "Criar conta"}
-          </CardTitle>
-          <CardDescription>
-            {isLogin
-              ? "Gerencie sua vida em um só lugar"
-              : "Comece a organizar sua vida agora"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Seu nome"
-                  required={!isLogin}
-                />
-              </div>
-            )}
+      <div className="w-full max-w-sm space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-black tracking-[0.15em] text-primary">SIFODA</h1>
+          <p className="text-sm text-text-secondary">
+            {isLogin ? "Entre na sua conta" : "Crie sua conta"}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-              />
+              <Label htmlFor="nome" className="text-xs font-extralight tracking-wider uppercase text-text-secondary">Nome</Label>
+              <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" required={!isLogin} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Aguarde..." : isLogin ? "Entrar" : "Criar conta"}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            {isLogin ? "Não tem conta?" : "Já tem conta?"}{" "}
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary font-medium hover:underline"
-            >
-              {isLogin ? "Criar conta" : "Entrar"}
-            </button>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-extralight tracking-wider uppercase text-text-secondary">E-mail</Label>
+            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-extralight tracking-wider uppercase text-text-secondary">Senha</Label>
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-11 bg-primary text-primary-foreground font-bold text-sm rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {loading ? "Aguarde..." : isLogin ? "Entrar" : "Criar conta"}
+          </button>
+        </form>
+
+        <div className="text-center text-sm text-text-secondary">
+          {isLogin ? "Não tem conta?" : "Já tem conta?"}{" "}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-primary font-bold hover:underline">
+            {isLogin ? "Criar conta" : "Entrar"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
