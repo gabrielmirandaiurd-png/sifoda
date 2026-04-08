@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -19,9 +16,9 @@ const columns = [
 ];
 
 const prioridades = [
-  { value: "alta", label: "Alta", color: "bg-destructive/20 text-destructive" },
-  { value: "media", label: "Média", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400" },
-  { value: "baixa", label: "Baixa", color: "bg-muted text-muted-foreground" },
+  { value: "alta", label: "Alta", dot: "bg-destructive" },
+  { value: "media", label: "Média", dot: "bg-warning" },
+  { value: "baixa", label: "Baixa", dot: "bg-text-muted" },
 ];
 
 type Filter = "todas" | "hoje" | "semana";
@@ -67,16 +64,16 @@ export default function TarefasPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Tarefas</h1>
         <div className="flex gap-2">
-          <div className="flex bg-muted rounded-lg p-0.5">
+          <div className="flex border border-border rounded-md overflow-hidden">
             {(["todas", "hoje", "semana"] as Filter[]).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${filter === f ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                className={`px-3 py-1.5 text-xs font-normal transition-colors ${filter === f ? "bg-surface-raised text-foreground" : "text-text-secondary hover:text-foreground"}`}
               >
                 {f === "todas" ? "Todas" : f === "hoje" ? "Hoje" : "Semana"}
               </button>
@@ -84,21 +81,23 @@ export default function TarefasPage() {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-1"><Plus className="h-4 w-4" /> Nova</Button>
+              <button className="flex items-center gap-1.5 px-4 h-9 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+                <Plus className="h-4 w-4" /> Nova
+              </button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nova tarefa</DialogTitle></DialogHeader>
+            <DialogContent className="bg-surface border-border">
+              <DialogHeader><DialogTitle className="font-bold">Nova tarefa</DialogTitle></DialogHeader>
               <form onSubmit={createTask} className="space-y-3">
-                <div className="space-y-1"><Label>Título</Label><Input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required /></div>
+                <div className="space-y-1"><Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Título</Label><Input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} required /></div>
                 <div className="space-y-1">
-                  <Label>Prioridade</Label>
+                  <Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Prioridade</Label>
                   <Select value={form.prioridade} onValueChange={v => setForm({ ...form, prioridade: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{prioridades.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1"><Label>Data limite</Label><Input type="date" value={form.data_limite} onChange={e => setForm({ ...form, data_limite: e.target.value })} /></div>
-                <Button type="submit" className="w-full">Criar</Button>
+                <div className="space-y-1"><Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Data limite</Label><Input type="date" value={form.data_limite} onChange={e => setForm({ ...form, data_limite: e.target.value })} /></div>
+                <button type="submit" className="w-full h-10 bg-primary text-primary-foreground font-bold text-sm rounded-md hover:opacity-90 transition-opacity">Criar</button>
               </form>
             </DialogContent>
           </Dialog>
@@ -106,42 +105,47 @@ export default function TarefasPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {columns.map(col => (
-          <div key={col.key} className="space-y-2">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{col.label}</h2>
-            <div className="space-y-2 min-h-[100px]">
-              {filtered.filter(t => t.status === col.key).map(t => (
-                <Card key={t.id} className="p-3">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{t.titulo}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className={`text-[10px] ${prioridades.find(p => p.value === t.prioridade)?.color}`}>
-                          {prioridades.find(p => p.value === t.prioridade)?.label}
-                        </Badge>
+        {columns.map(col => {
+          const colTasks = filtered.filter(t => t.status === col.key);
+          return (
+            <div key={col.key} className="space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-sm font-bold">{col.label}</h2>
+                <span className="text-xs font-black bg-primary text-primary-foreground w-5 h-5 flex items-center justify-center rounded-sm">{colTasks.length}</span>
+              </div>
+              <div className="space-y-2 min-h-[100px]">
+                {colTasks.map(t => (
+                  <div key={t.id} className="bg-surface-raised border border-border rounded-md p-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${prioridades.find(p => p.value === t.prioridade)?.dot}`} />
+                          <span className="text-sm">{t.titulo}</span>
+                        </div>
                         {t.data_limite && (
-                          <span className="text-[10px] text-muted-foreground">
+                          <p className="text-[11px] font-extralight tracking-[0.08em] text-text-secondary mt-1 ml-4">
                             {format(new Date(t.data_limite + "T12:00:00"), "dd/MM")}
-                          </span>
+                          </p>
                         )}
                       </div>
+                      <button onClick={() => deleteTask(t.id)} className="p-1 text-text-muted hover:text-destructive transition-colors">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteTask(t.id)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <div className="flex gap-1 mt-2">
+                      {columns.filter(c => c.key !== col.key).map(c => (
+                        <button key={c.key} onClick={() => moveTask(t.id, c.key)}
+                          className="text-[10px] px-2 py-1 border border-border rounded-sm text-text-secondary hover:border-primary hover:text-primary transition-colors">
+                          → {c.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-1 mt-2">
-                    {columns.filter(c => c.key !== col.key).map(c => (
-                      <Button key={c.key} variant="outline" size="sm" className="text-[10px] h-6 px-2" onClick={() => moveTask(t.id, c.key)}>
-                        → {c.label}
-                      </Button>
-                    ))}
-                  </div>
-                </Card>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

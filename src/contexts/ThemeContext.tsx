@@ -8,7 +8,7 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "light",
+  theme: "dark",
   toggleTheme: () => {},
 });
 
@@ -16,13 +16,13 @@ export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem("tapago-theme");
-    return (saved as Theme) || "light";
+    const saved = localStorage.getItem("sifoda-theme");
+    return (saved as Theme) || "dark";
   });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("tapago-theme", theme);
+    localStorage.setItem("sifoda-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));

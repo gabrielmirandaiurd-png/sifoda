@@ -6,7 +6,6 @@ import {
   ListChecks,
   Dumbbell,
   Apple,
-  CheckCircle2,
   Moon,
   Sun,
   LogOut,
@@ -14,7 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
 
 const navItems = [
   { to: "/", icon: Home, label: "Início" },
@@ -31,13 +29,14 @@ export default function DesktopSidebar() {
   const { signOut } = useAuth();
 
   return (
-    <aside className="hidden md:flex md:flex-col md:w-64 border-r bg-card h-screen sticky top-0">
-      <div className="flex items-center gap-2 px-6 py-5 border-b">
-        <CheckCircle2 className="h-7 w-7 text-primary" />
-        <span className="text-xl font-bold tracking-tight">TáPago</span>
+    <aside className="hidden md:flex md:flex-col w-[220px] border-r border-border bg-surface h-screen sticky top-0">
+      <div className="px-6 py-6">
+        <span className="text-xl font-black tracking-[0.15em] text-primary">
+          SIFODA
+        </span>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-2 space-y-0.5">
         {navItems.map(({ to, icon: Icon, label }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
@@ -45,38 +44,34 @@ export default function DesktopSidebar() {
               key={to}
               to={to}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 h-11 px-4 text-sm font-normal transition-colors rounded-md",
                 active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-surface-raised text-foreground border-l-2 border-primary"
+                  : "text-text-secondary hover:text-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-text-secondary")} />
               {label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t space-y-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-3"
+      <div className="px-3 py-4 border-t border-border space-y-0.5">
+        <button
           onClick={toggleTheme}
+          className="flex items-center gap-3 h-11 px-4 w-full text-sm text-text-secondary hover:text-foreground transition-colors rounded-md"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === "dark" ? "Modo claro" : "Modo escuro"}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+        </button>
+        <button
           onClick={signOut}
+          className="flex items-center gap-3 h-11 px-4 w-full text-sm text-destructive hover:text-destructive/80 transition-colors rounded-md"
         >
           <LogOut className="h-4 w-4" />
           Sair
-        </Button>
+        </button>
       </div>
     </aside>
   );
