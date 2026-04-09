@@ -470,7 +470,7 @@ export default function FinanceiroPage() {
   ].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 5);
 
   const handleDelete = async (table: string, id: string) => {
-    await supabase.from(table).delete().eq("id", id);
+    await supabase.from(table as any).delete().eq("id", id);
     loadAll();
   };
 
