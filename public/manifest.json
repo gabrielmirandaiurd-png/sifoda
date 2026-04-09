@@ -1,11 +1,11 @@
 {
-  "name": "TáPago",
-  "short_name": "TáPago",
+  "name": "FluxLife",
+  "short_name": "FluxLife",
   "description": "Gestão de vida pessoal",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f7fa",
-  "theme_color": "#3b82f6",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
   "icons": [
     {
       "src": "/icon-192.png",

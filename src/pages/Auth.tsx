@@ -37,7 +37,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-black tracking-[0.15em] text-primary">SIFODA</h1>
+          <h1 className="text-2xl font-black tracking-[0.15em] text-primary">FluxLife</h1>
           <p className="text-sm text-text-secondary">
             {isLogin ? "Entre na sua conta" : "Crie sua conta"}
           </p>

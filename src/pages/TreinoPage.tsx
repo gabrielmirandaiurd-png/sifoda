@@ -5,11 +5,108 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Plus, ArrowLeft, ArrowUp, ArrowDown } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, ArrowLeft, ArrowUp, ArrowDown, ChevronDown, Timer } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// ─── Shared helpers ──────────────────────────────────
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function PillSelect({ options, value, onChange }: { options: { value: string; label: string }[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(o => (
+        <button key={o.value} type="button" onClick={() => onChange(o.value)}
+          className={`px-3 py-2 text-xs rounded-md border transition-colors ${value === o.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-text-secondary hover:border-border-active"}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MoreDetails({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-xs text-text-secondary hover:text-primary transition-colors">
+        <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} /> Mais detalhes
+      </button>
+      {open && <div className="mt-2 space-y-3">{children}</div>}
+    </div>
+  );
+}
+
+const descansoOptions = [
+  { value: "30", label: "30s" }, { value: "45", label: "45s" }, { value: "60", label: "60s" },
+  { value: "90", label: "90s" }, { value: "120", label: "2min" }, { value: "180", label: "3min" },
+];
+
+const modalidadeCardio = [
+  { value: "corrida", label: "Corrida" }, { value: "caminhada", label: "Caminhada" },
+  { value: "bike", label: "Bike" }, { value: "eliptico", label: "Elíptico" },
+  { value: "pular_corda", label: "Pular corda" }, { value: "outro", label: "Outro" },
+];
+
+const intensidadeOptions = [
+  { value: "leve", label: "Leve" }, { value: "moderada", label: "Moderada" }, { value: "intensa", label: "Intensa" },
+];
+
+const tipoExercicio = [
+  { value: "musculacao", label: "Musculação" }, { value: "cardio", label: "Cardio" },
+  { value: "funcional", label: "Funcional" }, { value: "flexibilidade", label: "Flexibilidade" },
+  { value: "outro", label: "Outro" },
+];
+
+const horarioOptions = [
+  { value: "manha_jejum", label: "Manhã em jejum" }, { value: "apos_treino", label: "Após treino" },
+  { value: "noite", label: "À noite" },
+];
+
+// ─── Session Logger ──────────────────────────────────
+function SessionLogger({ exercise, userId, onDone }: { exercise: any; userId: string; onDone: () => void }) {
+  const numSeries = exercise.series || 3;
+  const [sets, setSets] = useState<{ carga: string; reps: string; feito: boolean }[]>(
+    Array.from({ length: numSeries }, () => ({ carga: String(exercise.carga_kg || ""), reps: String(exercise.repeticoes || "12"), feito: false }))
+  );
+
+  const saveSession = async () => {
+    const { error } = await supabase.from("exercise_sessions").insert({
+      user_id: userId,
+      exercise_id: exercise.id,
+      data: format(new Date(), "yyyy-MM-dd"),
+      sets_data: sets.map((s, i) => ({ set: i + 1, carga: Number(s.carga) || 0, reps: Number(s.reps) || 0, feito: s.feito })),
+    });
+    if (error) toast.error(error.message);
+    else { toast.success("Sessão registrada!"); onDone(); }
+  };
+
+  return (
+    <div className="space-y-2 px-4 pb-3">
+      {sets.map((s, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="text-xs text-text-muted w-6">S{i + 1}</span>
+          <Input type="number" value={s.carga} onChange={e => { const n = [...sets]; n[i].carga = e.target.value; setSets(n); }} placeholder="kg" className="w-16 h-8 text-xs" />
+          <Input type="number" value={s.reps} onChange={e => { const n = [...sets]; n[i].reps = e.target.value; setSets(n); }} placeholder="reps" className="w-16 h-8 text-xs" />
+          <Checkbox checked={s.feito} onCheckedChange={v => { const n = [...sets]; n[i].feito = !!v; setSets(n); }} className="rounded-full h-4 w-4" />
+        </div>
+      ))}
+      <button onClick={saveSession} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+        Salvar sessão
+      </button>
+    </div>
+  );
+}
+
+// ─── MAIN PAGE ──────────────────────────────────────
 export default function TreinoPage() {
   const { user } = useAuth();
   const [plans, setPlans] = useState<any[]>([]);
@@ -17,11 +114,14 @@ export default function TreinoPage() {
   const [exercises, setExercises] = useState<any[]>([]);
   const [streak, setStreak] = useState(0);
   const [peso, setPeso] = useState("");
+  const [pesoHorario, setPesoHorario] = useState("manha_jejum");
+  const [pesoObs, setPesoObs] = useState("");
   const [pesoHistory, setPesoHistory] = useState<any[]>([]);
   const [todayLog, setTodayLog] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [planForm, setPlanForm] = useState({ nome: "", dias_semana: [] as string[] });
-  const [exForm, setExForm] = useState({ nome: "", series: "3", repeticoes: "12" });
+  const [exForm, setExForm] = useState<any>({ nome: "", tipo: "musculacao", series: "3", repeticoes: "12" });
+  const [sessionOpen, setSessionOpen] = useState<string | null>(null);
 
   useEffect(() => { if (user) { loadPlans(); loadStreak(); loadPeso(); } }, [user]);
 
@@ -38,8 +138,7 @@ export default function TreinoPage() {
     for (const log of data) {
       const logDate = new Date(log.data + "T12:00:00");
       const diff = differenceInCalendarDays(checkDate, logDate);
-      if (diff <= 1) { count++; checkDate = logDate; }
-      else break;
+      if (diff <= 1) { count++; checkDate = logDate; } else break;
     }
     setStreak(count);
   };
@@ -70,12 +169,32 @@ export default function TreinoPage() {
   const addExercise = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selected) return;
-    const { error } = await supabase.from("workout_exercises").insert({
-      ...exForm, series: Number(exForm.series), repeticoes: Number(exForm.repeticoes),
-      plan_id: selected.id, user_id: user.id, ordem: exercises.length,
-    });
+
+    const payload: any = {
+      nome: exForm.nome, tipo: exForm.tipo, plan_id: selected.id,
+      user_id: user.id, ordem: exercises.length,
+    };
+
+    if (exForm.tipo === "musculacao" || exForm.tipo === "funcional") {
+      payload.series = Number(exForm.series);
+      payload.repeticoes = Number(exForm.repeticoes);
+      payload.carga_kg = exForm.carga_kg ? Number(exForm.carga_kg) : null;
+      payload.descanso_segundos = exForm.descanso ? Number(exForm.descanso) : null;
+    } else if (exForm.tipo === "cardio") {
+      payload.duracao_minutos = Number(exForm.duracao_minutos);
+      payload.modalidade_cardio = exForm.modalidade_cardio;
+      payload.intensidade = exForm.intensidade;
+      payload.distancia_km = exForm.distancia_km ? Number(exForm.distancia_km) : null;
+      payload.series = 1;
+      payload.repeticoes = 1;
+    } else {
+      payload.series = Number(exForm.series) || 3;
+      payload.repeticoes = Number(exForm.repeticoes) || 12;
+    }
+
+    const { error } = await supabase.from("workout_exercises").insert(payload);
     if (error) toast.error(error.message);
-    else { setExForm({ nome: "", series: "3", repeticoes: "12" }); selectPlan(selected); }
+    else { setExForm({ nome: "", tipo: "musculacao", series: "3", repeticoes: "12" }); selectPlan(selected); }
   };
 
   const toggleExercise = async (exId: string) => {
@@ -93,17 +212,20 @@ export default function TreinoPage() {
 
   const salvarPeso = async () => {
     if (!user || !peso) return;
-    const { error } = await supabase.from("body_weight_logs").upsert({ user_id: user.id, data: format(new Date(), "yyyy-MM-dd"), peso: Number(peso) });
+    const { error } = await supabase.from("body_weight_logs").upsert({
+      user_id: user.id, data: format(new Date(), "yyyy-MM-dd"),
+      peso: Number(peso), horario: pesoHorario, observacao: pesoObs || null,
+    } as any);
     if (error) toast.error(error.message);
-    else { toast.success("Peso registrado!"); setPeso(""); loadPeso(); }
+    else { toast.success("Peso registrado!"); setPeso(""); setPesoObs(""); loadPeso(); }
   };
 
   const diasSemana = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
   const diasLabels: Record<string, string> = { seg: "SEG", ter: "TER", qua: "QUA", qui: "QUI", sex: "SEX", sab: "SAB", dom: "DOM" };
   const todayDay = format(new Date(), "EEE", { locale: ptBR }).toLowerCase().slice(0, 3);
-
   const pesoTrend = pesoHistory.length >= 2 ? (pesoHistory[0].peso > pesoHistory[1].peso ? "up" : pesoHistory[0].peso < pesoHistory[1].peso ? "down" : "same") : "same";
 
+  // ─── PLAN DETAIL VIEW ──────────────────────────────
   if (selected) {
     const concluidos: string[] = todayLog?.exercicios_concluidos || [];
     return (
@@ -126,46 +248,85 @@ export default function TreinoPage() {
           })}
         </div>
 
+        {/* Exercise list */}
         <div>
           {exercises.map(ex => (
-            <label key={ex.id} className="flex items-center gap-3 h-[52px] px-4 border-b border-border cursor-pointer hover:bg-surface-raised transition-colors">
-              <Checkbox checked={concluidos.includes(ex.id)} onCheckedChange={() => toggleExercise(ex.id)} className="rounded-full h-5 w-5" />
-              <div className={`flex-1 flex items-center gap-2 ${concluidos.includes(ex.id) ? "line-through text-text-muted" : ""}`}>
-                <span className="text-sm">{ex.nome}</span>
-                <span className="text-xs text-text-secondary">{ex.series}×{ex.repeticoes}</span>
-              </div>
-            </label>
+            <div key={ex.id} className="border-b border-border">
+              <label className="flex items-center gap-3 h-[52px] px-4 cursor-pointer hover:bg-surface-raised transition-colors">
+                <Checkbox checked={concluidos.includes(ex.id)} onCheckedChange={() => toggleExercise(ex.id)} className="rounded-full h-5 w-5" />
+                <div className={`flex-1 flex items-center gap-2 ${concluidos.includes(ex.id) ? "line-through text-text-muted" : ""}`}>
+                  <span className="text-sm">{ex.nome}</span>
+                  {ex.tipo === "cardio" ? (
+                    <span className="text-xs text-text-secondary">{ex.duracao_minutos}min · {ex.modalidade_cardio || ""}</span>
+                  ) : (
+                    <span className="text-xs text-text-secondary">{ex.series}×{ex.repeticoes}{ex.carga_kg ? ` · ${ex.carga_kg}kg` : ""}</span>
+                  )}
+                </div>
+                <button type="button" onClick={(e) => { e.preventDefault(); setSessionOpen(sessionOpen === ex.id ? null : ex.id); }}
+                  className="text-[10px] px-2 py-1 border border-border rounded text-text-secondary hover:border-primary hover:text-primary transition-colors">
+                  Registrar
+                </button>
+              </label>
+              {sessionOpen === ex.id && user && (
+                <SessionLogger exercise={ex} userId={user.id} onDone={() => { setSessionOpen(null); selectPlan(selected); }} />
+              )}
+            </div>
           ))}
         </div>
 
-        <form onSubmit={addExercise} className="flex gap-2 flex-wrap">
-          <Input value={exForm.nome} onChange={e => setExForm({ ...exForm, nome: e.target.value })} placeholder="Exercício" required className="flex-1 min-w-[120px]" />
-          <Input value={exForm.series} onChange={e => setExForm({ ...exForm, series: e.target.value })} type="number" className="w-16" placeholder="Séries" />
-          <Input value={exForm.repeticoes} onChange={e => setExForm({ ...exForm, repeticoes: e.target.value })} type="number" className="w-16" placeholder="Reps" />
-          <button type="submit" className="h-10 w-10 flex items-center justify-center border border-border text-text-secondary hover:border-primary hover:text-primary transition-colors rounded-md">
-            <Plus className="h-4 w-4" />
-          </button>
-        </form>
+        {/* Add exercise form */}
+        <div className="space-y-3 bg-surface border border-border rounded-md p-4">
+          <p className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Adicionar exercício</p>
+          <form onSubmit={addExercise} className="space-y-3">
+            <Input value={exForm.nome} onChange={e => setExForm({ ...exForm, nome: e.target.value })} placeholder="Nome do exercício" required />
+            <Field label="Tipo"><PillSelect options={tipoExercicio} value={exForm.tipo} onChange={v => setExForm({ ...exForm, tipo: v })} /></Field>
+
+            {(exForm.tipo === "musculacao" || exForm.tipo === "funcional") && (
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Séries"><Input type="number" value={exForm.series} onChange={e => setExForm({ ...exForm, series: e.target.value })} /></Field>
+                <Field label="Repetições"><Input value={exForm.repeticoes} onChange={e => setExForm({ ...exForm, repeticoes: e.target.value })} placeholder="12 ou 'até falha'" /></Field>
+                <MoreDetails>
+                  <Field label="Carga (kg)"><Input type="number" step="0.5" value={exForm.carga_kg || ""} onChange={e => setExForm({ ...exForm, carga_kg: e.target.value })} /></Field>
+                  <Field label="Descanso"><PillSelect options={descansoOptions} value={exForm.descanso || ""} onChange={v => setExForm({ ...exForm, descanso: v })} /></Field>
+                </MoreDetails>
+              </div>
+            )}
+
+            {exForm.tipo === "cardio" && (
+              <div className="space-y-3">
+                <Field label="Duração (min)"><Input type="number" value={exForm.duracao_minutos || ""} onChange={e => setExForm({ ...exForm, duracao_minutos: e.target.value })} required /></Field>
+                <Field label="Modalidade"><PillSelect options={modalidadeCardio} value={exForm.modalidade_cardio || ""} onChange={v => setExForm({ ...exForm, modalidade_cardio: v })} /></Field>
+                <Field label="Intensidade"><PillSelect options={intensidadeOptions} value={exForm.intensidade || ""} onChange={v => setExForm({ ...exForm, intensidade: v })} /></Field>
+                <MoreDetails>
+                  <Field label="Distância (km)"><Input type="number" step="0.1" value={exForm.distancia_km || ""} onChange={e => setExForm({ ...exForm, distancia_km: e.target.value })} /></Field>
+                </MoreDetails>
+              </div>
+            )}
+
+            <button type="submit" className="h-10 w-full bg-primary text-primary-foreground font-bold text-sm rounded-md hover:opacity-90 transition-opacity">
+              <Plus className="h-4 w-4 inline mr-1" /> Adicionar
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
+  // ─── PLAN LIST VIEW ──────────────────────────────────
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Treino</h1>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <button className="flex items-center gap-1.5 px-4 h-9 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
-              <Plus className="h-4 w-4" /> Novo plano
-            </button>
-          </DialogTrigger>
+          <button onClick={() => setOpen(true)} className="flex items-center gap-1.5 px-4 h-9 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity">
+            <Plus className="h-4 w-4" /> Novo plano
+          </button>
           <DialogContent className="bg-surface border-border">
             <DialogHeader><DialogTitle className="font-bold">Novo plano de treino</DialogTitle></DialogHeader>
             <form onSubmit={createPlan} className="space-y-3">
-              <div className="space-y-1"><Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Nome</Label><Input value={planForm.nome} onChange={e => setPlanForm({ ...planForm, nome: e.target.value })} required /></div>
+              <Field label="Nome do plano"><Input value={planForm.nome} onChange={e => setPlanForm({ ...planForm, nome: e.target.value })} required placeholder="Ex: Hipertrofia semana 1" /></Field>
               <div className="space-y-1">
-                <Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Dias da semana</Label>
+                <Label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Dias ativos</Label>
                 <div className="flex flex-wrap gap-2">
                   {diasSemana.map(d => (
                     <button key={d} type="button" onClick={() => {
@@ -201,13 +362,19 @@ export default function TreinoPage() {
         </div>
       </div>
 
-      {/* Register weight inline */}
-      <div className="flex gap-2 items-end">
-        <div className="flex-1">
-          <label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Registrar peso (kg)</label>
-          <Input type="number" step="0.1" value={peso} onChange={e => setPeso(e.target.value)} placeholder="Ex: 82.5" className="mt-1" />
+      {/* Register weight — enhanced */}
+      <div className="space-y-2">
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-xs font-extralight tracking-[0.08em] uppercase text-text-secondary">Registrar peso (kg)</label>
+            <Input type="number" step="0.1" value={peso} onChange={e => setPeso(e.target.value)} placeholder="Ex: 82.5" className="mt-1" />
+          </div>
+          <button onClick={salvarPeso} className="h-10 px-4 border border-border text-sm hover:border-primary hover:text-primary transition-colors rounded-md">Salvar</button>
         </div>
-        <button onClick={salvarPeso} className="h-10 px-4 border border-border text-sm hover:border-primary hover:text-primary transition-colors rounded-md">Salvar</button>
+        <div className="flex gap-2 items-center">
+          <PillSelect options={horarioOptions} value={pesoHorario} onChange={setPesoHorario} />
+        </div>
+        <Input value={pesoObs} onChange={e => setPesoObs(e.target.value)} placeholder="Observação (opcional)" className="text-sm" />
       </div>
 
       {/* Plans */}
@@ -227,12 +394,12 @@ export default function TreinoPage() {
         </div>
       )}
 
-      {/* Weight history sparkline approximation */}
+      {/* Weight history sparkline */}
       {pesoHistory.length > 1 && (
         <div className="bg-surface border border-border rounded-md p-4">
           <p className="text-[11px] font-extralight tracking-[0.08em] uppercase text-text-secondary mb-3">Histórico de peso</p>
           <div className="flex items-end gap-1 h-12">
-            {pesoHistory.slice(0, 7).reverse().map((p, i) => {
+            {pesoHistory.slice(0, 7).reverse().map((p) => {
               const min = Math.min(...pesoHistory.slice(0, 7).map((x: any) => x.peso));
               const max = Math.max(...pesoHistory.slice(0, 7).map((x: any) => x.peso));
               const range = max - min || 1;

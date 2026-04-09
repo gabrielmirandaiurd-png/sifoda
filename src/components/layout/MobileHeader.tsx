@@ -9,7 +9,7 @@ export default function MobileHeader() {
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b border-border bg-surface md:hidden">
       <span className="text-base font-black tracking-[0.15em] text-primary">
-        SIFODA
+        FluxLife
       </span>
       <div className="flex items-center gap-1">
         <button onClick={toggleTheme} className="p-2 text-text-secondary hover:text-foreground transition-colors">
