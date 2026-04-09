@@ -32,7 +32,7 @@ export default function DesktopSidebar() {
     <aside className="hidden md:flex md:flex-col w-[220px] border-r border-border bg-surface h-screen sticky top-0">
       <div className="px-6 py-6">
         <span className="text-xl font-black tracking-[0.15em] text-primary">
-          SIFODA
+          FluxLife
         </span>
       </div>
 
