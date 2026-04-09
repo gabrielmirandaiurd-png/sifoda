@@ -18,21 +18,27 @@ export type Database = {
         Row: {
           created_at: string
           data: string
+          horario: string | null
           id: string
+          observacao: string | null
           peso: number
           user_id: string
         }
         Insert: {
           created_at?: string
           data?: string
+          horario?: string | null
           id?: string
+          observacao?: string | null
           peso: number
           user_id: string
         }
         Update: {
           created_at?: string
           data?: string
+          horario?: string | null
           id?: string
+          observacao?: string | null
           peso?: number
           user_id?: string
         }
@@ -98,44 +104,135 @@ export type Database = {
         }
         Relationships: []
       }
+      debt_payments: {
+        Row: {
+          created_at: string
+          data_pagamento: string
+          debt_id: string
+          forma_pagamento: string | null
+          id: string
+          observacao: string | null
+          user_id: string
+          valor_pago: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string
+          debt_id: string
+          forma_pagamento?: string | null
+          id?: string
+          observacao?: string | null
+          user_id: string
+          valor_pago: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string
+          debt_id?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacao?: string | null
+          user_id?: string
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debts: {
         Row: {
           created_at: string
           credor: string
+          data_inicio: string | null
+          frequencia: string | null
           id: string
+          observacao: string | null
           parcelas_pagas: number
           parcelas_total: number
           status: string
+          tipo: string | null
           updated_at: string
           user_id: string
           valor_atual: number
           valor_original: number
+          valor_parcela: number | null
         }
         Insert: {
           created_at?: string
           credor: string
+          data_inicio?: string | null
+          frequencia?: string | null
           id?: string
+          observacao?: string | null
           parcelas_pagas?: number
           parcelas_total?: number
           status?: string
+          tipo?: string | null
           updated_at?: string
           user_id: string
           valor_atual: number
           valor_original: number
+          valor_parcela?: number | null
         }
         Update: {
           created_at?: string
           credor?: string
+          data_inicio?: string | null
+          frequencia?: string | null
           id?: string
+          observacao?: string | null
           parcelas_pagas?: number
           parcelas_total?: number
           status?: string
+          tipo?: string | null
           updated_at?: string
           user_id?: string
           valor_atual?: number
           valor_original?: number
+          valor_parcela?: number | null
         }
         Relationships: []
+      }
+      exercise_sessions: {
+        Row: {
+          created_at: string
+          data: string
+          exercise_id: string
+          id: string
+          sets_data: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          exercise_id: string
+          id?: string
+          sets_data?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          exercise_id?: string
+          id?: string
+          sets_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sessions_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "workout_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -173,6 +270,45 @@ export type Database = {
         }
         Relationships: []
       }
+      food_library: {
+        Row: {
+          calorias_por_100g: number | null
+          carboidrato_por_100g: number | null
+          created_at: string
+          gordura_por_100g: number | null
+          id: string
+          nome: string
+          preco_aproximado: number | null
+          proteina_por_100g: number | null
+          unidade_padrao: string | null
+          user_id: string
+        }
+        Insert: {
+          calorias_por_100g?: number | null
+          carboidrato_por_100g?: number | null
+          created_at?: string
+          gordura_por_100g?: number | null
+          id?: string
+          nome: string
+          preco_aproximado?: number | null
+          proteina_por_100g?: number | null
+          unidade_padrao?: string | null
+          user_id: string
+        }
+        Update: {
+          calorias_por_100g?: number | null
+          carboidrato_por_100g?: number | null
+          created_at?: string
+          gordura_por_100g?: number | null
+          id?: string
+          nome?: string
+          preco_aproximado?: number | null
+          proteina_por_100g?: number | null
+          unidade_padrao?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       income: {
         Row: {
           categoria: string
@@ -206,6 +342,51 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_ingredients: {
+        Row: {
+          created_at: string
+          food_id: string
+          id: string
+          meal_id: string
+          quantidade: number
+          unidade: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          food_id: string
+          id?: string
+          meal_id: string
+          quantidade: number
+          unidade?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          food_id?: string
+          id?: string
+          meal_id?: string
+          quantidade?: number
+          unidade?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_ingredients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_ingredients_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_logs: {
         Row: {
           concluida: boolean
@@ -238,30 +419,84 @@ export type Database = {
       }
       meal_plans: {
         Row: {
+          ativo: boolean | null
           created_at: string
           descricao: string
           id: string
+          nome: string | null
           refeicao: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          ativo?: boolean | null
           created_at?: string
           descricao: string
           id?: string
+          nome?: string | null
           refeicao: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          ativo?: boolean | null
           created_at?: string
           descricao?: string
           id?: string
+          nome?: string | null
           refeicao?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      meals: {
+        Row: {
+          created_at: string
+          horario: string | null
+          id: string
+          nome: string
+          ordem: number | null
+          plan_id: string
+          repete_igual_refeicao_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          horario?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+          plan_id: string
+          repete_igual_refeicao_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          horario?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+          plan_id?: string
+          repete_igual_refeicao_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meals_repete_igual_refeicao_id_fkey"
+            columns: ["repete_igual_refeicao_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       milestones: {
         Row: {
@@ -399,6 +634,77 @@ export type Database = {
           },
         ]
       }
+      transactions: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          credor: string | null
+          data: string
+          debt_id: string | null
+          descricao: string
+          frequencia: string | null
+          id: string
+          observacao: string | null
+          parcela_atual: number | null
+          parcelas_total: number | null
+          recorrente: boolean
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+          valor: number
+          vencimento: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          credor?: string | null
+          data?: string
+          debt_id?: string | null
+          descricao: string
+          frequencia?: string | null
+          id?: string
+          observacao?: string | null
+          parcela_atual?: number | null
+          parcelas_total?: number | null
+          recorrente?: boolean
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+          valor: number
+          vencimento?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          credor?: string | null
+          data?: string
+          debt_id?: string | null
+          descricao?: string
+          frequencia?: string | null
+          id?: string
+          observacao?: string | null
+          parcela_atual?: number | null
+          parcelas_total?: number | null
+          recorrente?: boolean
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          valor?: number
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uber_daily_log: {
         Row: {
           created_at: string
@@ -447,35 +753,91 @@ export type Database = {
         }
         Relationships: []
       }
-      workout_exercises: {
+      weekly_stock: {
         Row: {
           created_at: string
+          food_id: string
           id: string
+          quantidade_disponivel: number
+          semana_referencia: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          food_id: string
+          id?: string
+          quantidade_disponivel?: number
+          semana_referencia?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          food_id?: string
+          id?: string
+          quantidade_disponivel?: number
+          semana_referencia?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_stock_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_exercises: {
+        Row: {
+          carga_kg: number | null
+          created_at: string
+          descanso_segundos: number | null
+          distancia_km: number | null
+          duracao_minutos: number | null
+          id: string
+          intensidade: string | null
+          modalidade_cardio: string | null
           nome: string
           ordem: number
           plan_id: string
           repeticoes: number
           series: number
+          tipo: string | null
           user_id: string
         }
         Insert: {
+          carga_kg?: number | null
           created_at?: string
+          descanso_segundos?: number | null
+          distancia_km?: number | null
+          duracao_minutos?: number | null
           id?: string
+          intensidade?: string | null
+          modalidade_cardio?: string | null
           nome: string
           ordem?: number
           plan_id: string
           repeticoes?: number
           series?: number
+          tipo?: string | null
           user_id: string
         }
         Update: {
+          carga_kg?: number | null
           created_at?: string
+          descanso_segundos?: number | null
+          distancia_km?: number | null
+          duracao_minutos?: number | null
           id?: string
+          intensidade?: string | null
+          modalidade_cardio?: string | null
           nome?: string
           ordem?: number
           plan_id?: string
           repeticoes?: number
           series?: number
+          tipo?: string | null
           user_id?: string
         }
         Relationships: [
@@ -525,6 +887,7 @@ export type Database = {
       }
       workout_plans: {
         Row: {
+          ativo: boolean | null
           created_at: string
           dias_semana: string[]
           id: string
@@ -533,6 +896,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ativo?: boolean | null
           created_at?: string
           dias_semana?: string[]
           id?: string
@@ -541,6 +905,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ativo?: boolean | null
           created_at?: string
           dias_semana?: string[]
           id?: string
